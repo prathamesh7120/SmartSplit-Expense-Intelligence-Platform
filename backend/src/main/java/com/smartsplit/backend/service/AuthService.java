@@ -9,6 +9,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.smartsplit.backend.dto.request.LoginRequest;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -16,6 +21,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+
+    private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
 
@@ -45,4 +52,42 @@ public class AuthService {
                 .message("Registration successful")
                 .build();
     }
+
+    public AuthResponse login(LoginRequest request) {
+
+        // authenticate() does two things automatically:
+        // 1. Calls UserDetailsServiceImpl.loadUserByUsername(email)
+        //    to fetch the user from database
+        // 2. Uses BCrypt to compare request.getPassword() with stored hash
+        // If either fails → throws BadCredentialsException automatically
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),    // principal (who)
+                            request.getPassword()  // credentials (proof)
+                    )
+            );
+        } catch (BadCredentialsException e) {
+            // Wrong password — throw our own message
+            // GlobalExceptionHandler will catch this RuntimeException
+            throw new RuntimeException("Invalid email or password");
+        }
+
+        // If we reach here, authentication succeeded.
+        // Load the user to get their details for the response.
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Generate a fresh JWT token for this login session
+        String token = jwtUtil.generateToken(user.getEmail());
+
+        return AuthResponse.builder()
+                .token(token)
+                .name(user.getName())
+                .email(user.getEmail())
+                .message("Login successful")
+                .build();
+    }
+
+
 }

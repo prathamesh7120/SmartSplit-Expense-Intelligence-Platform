@@ -1,8 +1,12 @@
 package com.smartsplit.backend.config;
 
+import com.smartsplit.backend.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -11,29 +15,41 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import com.smartsplit.backend.security.UserDetailsServiceImpl;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // This is the bean AuthService was asking for.
-    // @Bean tells Spring: "create one instance of this
-    // and keep it ready for anyone who needs it."
+    // Spring injects both of these automatically
+    // because they are @Component and @Service beans
+    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final UserDetailsServiceImpl userDetailsService;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // BCrypt is a one-way hashing algorithm.
-        // "password123" → "$2a$10$xyz..." — cannot be reversed.
-        // Strength 10 means it runs 2^10 = 1024 hashing rounds.
-        // Slower hashing = harder for attackers to brute force.
         return new BCryptPasswordEncoder();
+    }
+
+    // AuthenticationProvider connects three things:
+    // 1. HOW to load a user (UserDetailsService = our UserDetailsServiceImpl)
+    // 2. HOW to verify password (PasswordEncoder = BCrypt)
+    // Spring Security uses this provider during login to authenticate.
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        // Tell it: use our UserDetailsServiceImpl to find users by email
+        provider.setUserDetailsService(userDetailsService);
+        // Tell it: use BCrypt to check passwords
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
     }
 
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config) throws Exception {
-        // Spring Security's built-in manager.
-        // We will use this later in the Login API
-        // to verify username + password combination.
         return config.getAuthenticationManager();
     }
 
@@ -41,25 +57,30 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
             throws Exception {
         http
-                // Disable CSRF — not needed for REST APIs.
-                // CSRF protects browser form submissions.
-                // Our React frontend uses JSON + JWT, not form cookies.
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // Define which endpoints are public vs protected.
                 .authorizeHttpRequests(auth -> auth
-                        // /api/auth/register and /api/auth/login
-                        // must be public — user is not logged in yet.
+                        // These endpoints need no token — they ARE the login/register
                         .requestMatchers("/api/auth/**").permitAll()
-                        // Every other endpoint requires a valid JWT token.
+                        // Every other request must have a valid JWT
                         .anyRequest().authenticated()
                 )
 
-                // STATELESS = do not create HTTP sessions.
-                // Each request must carry its own JWT token.
-                // This is what makes your API scalable.
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // Connect our DaoAuthenticationProvider
+                .authenticationProvider(authenticationProvider())
+
+                // THIS IS THE KEY LINE:
+                // Add our JwtAuthenticationFilter BEFORE
+                // Spring's default UsernamePasswordAuthenticationFilter.
+                // This means: check JWT first, before Spring tries
+                // to do its own username/password form authentication.
+                .addFilterBefore(
+                        jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class
                 );
 
         return http.build();
