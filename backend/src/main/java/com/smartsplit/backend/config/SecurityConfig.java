@@ -1,5 +1,12 @@
 package com.smartsplit.backend.config;
 
+
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.List;
+
+
 import com.smartsplit.backend.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -59,10 +66,14 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
 
+                // Tell Spring Security to use our CORS configuration.
+                // Without this line, Spring Security blocks CORS
+                // BEFORE your CorsConfig bean even runs.
+                .cors(cors -> cors.configurationSource(
+                        corsConfigurationSource()))
+
                 .authorizeHttpRequests(auth -> auth
-                        // These endpoints need no token — they ARE the login/register
                         .requestMatchers("/api/auth/**").permitAll()
-                        // Every other request must have a valid JWT
                         .anyRequest().authenticated()
                 )
 
@@ -70,14 +81,8 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // Connect our DaoAuthenticationProvider
                 .authenticationProvider(authenticationProvider())
 
-                // THIS IS THE KEY LINE:
-                // Add our JwtAuthenticationFilter BEFORE
-                // Spring's default UsernamePasswordAuthenticationFilter.
-                // This means: check JWT first, before Spring tries
-                // to do its own username/password form authentication.
                 .addFilterBefore(
                         jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -85,4 +90,27 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://localhost:3000"
+        ));
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
+        config.setAllowedHeaders(List.of(
+                "Authorization", "Content-Type", "Accept", "Origin"
+        ));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
 }

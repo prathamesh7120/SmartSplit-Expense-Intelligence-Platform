@@ -25,21 +25,14 @@ public class ExpenseService {
     private final GroupMemberRepository groupMemberRepository;
     private final UserRepository userRepository;
 
-    // @Transactional = wraps this entire method in one database transaction.
-    // If saving the Expense succeeds but saving an ExpenseSplit fails,
-    // @Transactional rolls back EVERYTHING — no partial data in database.
-    // Without this, you could have an Expense with missing splits.
-    // That would break balance calculations silently.
     @Transactional
     public ExpenseResponse createExpense(Long groupId,
                                          CreateExpenseRequest request,
                                          User currentUser) {
 
-        // Step 1: Verify group exists
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found"));
 
-        // Step 2: Verify current user is a member of this group
         boolean isMember = groupMemberRepository
                 .existsByGroupIdAndUserId(groupId, currentUser.getId());
         if (!isMember) {
@@ -47,7 +40,6 @@ public class ExpenseService {
                     "You must be a group member to add expenses");
         }
 
-        // Step 3: Build and save the Expense record
         Expense expense = Expense.builder()
                 .group(group)
                 .paidBy(currentUser)
@@ -61,7 +53,6 @@ public class ExpenseService {
 
         Expense savedExpense = expenseRepository.save(expense);
 
-        // Step 4: Calculate and create splits based on split type
         List<ExpenseSplit> splits;
 
         if (request.getSplitType() == Expense.SplitType.EQUAL) {
@@ -76,12 +67,10 @@ public class ExpenseService {
         return buildExpenseResponse(savedExpense, splits);
     }
 
-    // EQUAL SPLIT LOGIC — the most common case
     private List<ExpenseSplit> createEqualSplits(Expense expense,
                                                  Group group,
                                                  User paidBy) {
 
-        // Get all members of this group
         List<GroupMember> members = groupMemberRepository
                 .findAll()
                 .stream()
@@ -94,10 +83,6 @@ public class ExpenseService {
             throw new RuntimeException("Group has no members");
         }
 
-        // Divide total amount equally.
-        // RoundingMode.HALF_UP = standard rounding (0.5 rounds up).
-        // scale(2) = two decimal places (paise level precision).
-        // Example: ₹100 / 3 = ₹33.33 (not ₹33.333333...)
         BigDecimal equalShare = expense.getAmount()
                 .divide(BigDecimal.valueOf(memberCount), 2,
                         RoundingMode.HALF_UP);
@@ -109,19 +94,15 @@ public class ExpenseService {
                     .expense(expense)
                     .user(member.getUser())
                     .amountOwed(equalShare)
-                    // The person who paid is already "settled"
-                    // — they owe themselves nothing.
                     .isSettled(member.getUser().getId()
                             .equals(paidBy.getId()))
                     .build();
-
             splits.add(split);
         }
 
         return splits;
     }
 
-    // CUSTOM SPLIT LOGIC — specific amounts per person
     private List<ExpenseSplit> createCustomSplits(
             Expense expense,
             Map<Long, BigDecimal> customSplits,
@@ -132,16 +113,15 @@ public class ExpenseService {
                     "Custom split amounts are required for CUSTOM split type");
         }
 
-        // Validate: sum of custom splits must equal total expense amount
         BigDecimal totalCustom = customSplits.values()
                 .stream()
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // compareTo returns 0 if equal, handles decimal precision correctly
         if (totalCustom.compareTo(expense.getAmount()) != 0) {
             throw new RuntimeException(
                     "Sum of custom splits (" + totalCustom +
-                            ") must equal expense amount (" + expense.getAmount() + ")");
+                            ") must equal expense amount (" +
+                            expense.getAmount() + ")");
         }
 
         List<ExpenseSplit> splits = new ArrayList<>();
@@ -152,8 +132,7 @@ public class ExpenseService {
 
             User user = userRepository.findById(userId)
                     .orElseThrow(() ->
-                            new RuntimeException(
-                                    "User not found: " + userId));
+                            new RuntimeException("User not found: " + userId));
 
             ExpenseSplit split = ExpenseSplit.builder()
                     .expense(expense)
@@ -168,7 +147,8 @@ public class ExpenseService {
         return splits;
     }
 
-    // GET ALL EXPENSES IN A GROUP
+    // ✅ FIXED — added @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public List<ExpenseResponse> getGroupExpenses(Long groupId,
                                                   User currentUser) {
 
@@ -188,7 +168,8 @@ public class ExpenseService {
                 .collect(Collectors.toList());
     }
 
-    // GROUP BALANCE — who owes whom
+    // ✅ FIXED — added @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public GroupBalanceResponse getGroupBalance(Long groupId,
                                                 User currentUser) {
 
@@ -201,45 +182,34 @@ public class ExpenseService {
             throw new RuntimeException("Access denied");
         }
 
-        // Get all expenses in this group
         List<Expense> expenses = expenseRepository
                 .findByGroupIdOrderByCreatedAtDesc(groupId);
 
-        // Calculate total group spend
         BigDecimal totalSpend = expenses.stream()
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Get all members
         List<GroupMember> members = groupMemberRepository
                 .findAll()
                 .stream()
                 .filter(m -> m.getGroup().getId().equals(groupId))
                 .collect(Collectors.toList());
 
-        // For each member calculate:
-        // totalPaid = sum of expenses where they are paidBy
-        // totalOwed = sum of their unsettled splits
-        // netBalance = totalPaid - totalOwed
         List<GroupBalanceResponse.MemberBalance> balances =
                 members.stream().map(member -> {
 
                     User user = member.getUser();
 
-                    // How much this person paid in total
                     BigDecimal totalPaid = expenses.stream()
                             .filter(e -> e.getPaidBy().getId()
                                     .equals(user.getId()))
                             .map(Expense::getAmount)
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                    // How much this person owes (unsettled splits)
                     BigDecimal totalOwed = expenseSplitRepository
-                            .getTotalOwedByUserInGroup(user.getId(), groupId);
+                            .getTotalOwedByUserInGroup(
+                                    user.getId(), groupId);
 
-                    // Net = paid - owed
-                    // Positive means group owes them money
-                    // Negative means they owe the group money
                     BigDecimal netBalance = totalPaid.subtract(totalOwed);
 
                     return GroupBalanceResponse.MemberBalance.builder()
@@ -260,7 +230,6 @@ public class ExpenseService {
                 .build();
     }
 
-    // PRIVATE HELPER — entity to DTO
     private ExpenseResponse buildExpenseResponse(Expense expense,
                                                  List<ExpenseSplit> splits) {
 
