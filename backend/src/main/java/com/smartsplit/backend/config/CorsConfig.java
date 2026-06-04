@@ -21,7 +21,8 @@ public class CorsConfig {
         // Add your Vercel URL here before deployment.
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "http://localhost:3000"
+                "http://localhost:3000",
+                "https://smart-split-expense-intelligence-pl.vercel.app"
         ));
 
         // Which HTTP methods are allowed.
