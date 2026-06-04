@@ -3,6 +3,8 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Register from './pages/auth/Register';
 import Login from './pages/auth/Login';
+import Dashboard from './pages/dashboard/Dashboard';
+import GroupDetail from './pages/dashboard/GroupDetail';
 
 // ProtectedRoute = wrapper component.
 // If user is not logged in → redirect to /login automatically.
@@ -38,17 +40,17 @@ const AppRoutes = () => {
 
       {/* Protected route placeholder — dashboard coming next */}
       <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <div style={{
-            display: 'flex', alignItems: 'center',
-            justifyContent: 'center', minHeight: '100vh',
-            color: 'var(--green)', fontSize: '1.25rem', fontWeight: '700'
-          }}>
-            ✅ Dashboard coming next!
-          </div>
-        </ProtectedRoute>
+         <ProtectedRoute><Dashboard /></ProtectedRoute>
       } />
+
+      <Route path="/groups/:groupId" element={
+   <ProtectedRoute><GroupDetail /></ProtectedRoute>
+} />
+
     </Routes>
+
+      
+
   );
 };
 
