@@ -4,25 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, TrendingUp, Wallet,
   LogOut, ChevronRight, Loader, X,
-  DollarSign, Receipt
+  Receipt
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { getMyGroups, createGroup } from '../../api/groupApi';
-import {
-  PieChart, Pie, Cell,
-  ResponsiveContainer, Tooltip
-} from 'recharts';
-
-// Category colors for pie chart
-const CATEGORY_COLORS = {
-  FOOD: '#e94560',
-  TRAVEL: '#38bdf8',
-  ACCOMMODATION: '#8b5cf6',
-  ENTERTAINMENT: '#f59e0b',
-  UTILITIES: '#10b981',
-  OTHER: '#94a3b8',
-};
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -31,14 +17,9 @@ const Dashboard = () => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    name: '', description: ''
-  });
+  const [createForm, setCreateForm] = useState({ name: '', description: '' });
   const [creating, setCreating] = useState(false);
 
-  // Load groups when component mounts.
-  // useEffect with [] = runs once after first render.
-  // This is where you fetch data from the backend.
   useEffect(() => {
     fetchGroups();
   }, []);
@@ -62,19 +43,13 @@ const Dashboard = () => {
     }
     setCreating(true);
     try {
-      const newGroup = await createGroup(
-        createForm.name,
-        createForm.description
-      );
-      // Add new group to existing list without refetching
+      const newGroup = await createGroup(createForm.name, createForm.description);
       setGroups(prev => [newGroup, ...prev]);
       setShowCreateModal(false);
       setCreateForm({ name: '', description: '' });
       toast.success(`Group "${newGroup.name}" created!`);
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || 'Failed to create group'
-      );
+      toast.error(error.response?.data?.message || 'Failed to create group');
     } finally {
       setCreating(false);
     }
@@ -86,62 +61,87 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  return (
-    <div style={{ minHeight: '100vh', padding: '0' }}>
+  // Get first name only for mobile
+  const firstName = user?.name?.split(' ')[0] || 'User';
 
-      {/* TOP NAVBAR */}
+  return (
+    <div style={{ minHeight: '100vh', overflowX: 'hidden' }}>
+
+      {/* ── NAVBAR ── */}
       <nav style={{
-        background: 'rgba(10, 15, 30, 0.8)',
+        background: 'rgba(10,15,30,0.9)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid var(--border)',
-        padding: '1rem 2rem',
+        padding: '0.875rem 1.25rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         position: 'sticky',
         top: 0,
         zIndex: 100,
+        gap: '8px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '24px' }}>💸</span>
+        {/* Logo */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          gap: '8px', flexShrink: 0,
+        }}>
+          <span style={{ fontSize: '22px' }}>💸</span>
           <span style={{
-            fontSize: '1.25rem',
-            fontWeight: '800',
+            fontSize: '1.1rem', fontWeight: '800',
             color: 'var(--text-primary)',
-          }}>SmartSplit</span>
+            whiteSpace: 'nowrap',
+          }}>
+            SmartSplit
+          </span>
         </div>
 
+        {/* Right side */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: '12px'
+          display: 'flex', alignItems: 'center',
+          gap: '8px', minWidth: 0,
         }}>
+          {/* Name badge — show only first name */}
           <div style={{
             background: 'var(--glass)',
             border: '1px solid var(--border)',
-            borderRadius: '10px',
-            padding: '6px 14px',
-            fontSize: '14px',
+            borderRadius: '8px',
+            padding: '5px 10px',
+            fontSize: '13px',
             color: 'var(--text-secondary)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '120px',
           }}>
-            👋 {user?.name}
+            👋 {firstName}
           </div>
+
+          {/* Logout button — icon only on mobile */}
           <button
             onClick={handleLogout}
             style={{
-              background: 'rgba(233, 69, 96, 0.1)',
-              border: '1px solid rgba(233, 69, 96, 0.2)',
-              borderRadius: '10px',
-              padding: '8px 14px',
+              background: 'rgba(233,69,96,0.1)',
+              border: '1px solid rgba(233,69,96,0.2)',
+              borderRadius: '8px',
+              padding: '7px 12px',
               color: 'var(--accent)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              fontSize: '14px',
-              fontFamily: 'Syne, sans-serif',
+              gap: '5px',
+              fontSize: '13px',
+              fontFamily: 'Syne,sans-serif',
               fontWeight: '600',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
-            <LogOut size={14} /> Logout
+            <LogOut size={14} />
+            {/* Hide text on very small screens */}
+            <span style={{ display: window.innerWidth < 400 ? 'none' : 'inline' }}>
+              Logout
+            </span>
           </button>
         </div>
       </nav>
@@ -149,17 +149,18 @@ const Dashboard = () => {
       <div style={{
         maxWidth: '1100px',
         margin: '0 auto',
-        padding: '2rem 1.5rem',
+        padding: '1.5rem 1rem',
+        width: '100%',
       }}>
 
-        {/* WELCOME HEADER */}
+        {/* ── WELCOME HEADER ── */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ marginBottom: '2rem' }}
+          style={{ marginBottom: '1.5rem' }}
         >
           <h1 style={{
-            fontSize: '2rem',
+            fontSize: 'clamp(1.5rem, 5vw, 2rem)',
             fontWeight: '800',
             marginBottom: '0.25rem',
           }}>
@@ -167,41 +168,39 @@ const Dashboard = () => {
           </h1>
           <p style={{
             color: 'var(--text-secondary)',
-            fontSize: '0.9rem',
+            fontSize: '0.875rem',
           }}>
             Manage shared expenses across all your groups
           </p>
         </motion.div>
 
-        {/* STATS ROW */}
+        {/* ── STATS ROW ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '1rem',
-            marginBottom: '2rem',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '10px',
+            marginBottom: '1.5rem',
           }}
         >
           {[
             {
-              icon: <Users size={20} />,
+              icon: <Users size={18} />,
               label: 'Total Groups',
               value: groups.length,
               color: 'var(--blue)',
             },
             {
-              icon: <Receipt size={20} />,
+              icon: <Receipt size={18} />,
               label: 'Total Members',
-              value: groups.reduce(
-                (sum, g) => sum + (g.members?.length || 0), 0
-              ),
+              value: groups.reduce((sum, g) => sum + (g.members?.length || 0), 0),
               color: 'var(--green)',
             },
             {
-              icon: <Wallet size={20} />,
+              icon: <Wallet size={18} />,
               label: 'Active Since',
               value: new Date().getFullYear(),
               color: 'var(--gold)',
@@ -213,21 +212,21 @@ const Dashboard = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 + i * 0.05 }}
               className="glass-card"
-              style={{ padding: '1.25rem' }}
+              style={{ padding: '1rem 0.875rem' }}
             >
               <div style={{
-                width: '40px', height: '40px',
-                borderRadius: '10px',
+                width: '34px', height: '34px',
+                borderRadius: '8px',
                 background: `${stat.color}20`,
                 display: 'flex', alignItems: 'center',
                 justifyContent: 'center',
                 color: stat.color,
-                marginBottom: '0.75rem',
+                marginBottom: '0.6rem',
               }}>
                 {stat.icon}
               </div>
               <div style={{
-                fontSize: '1.75rem',
+                fontSize: 'clamp(1.25rem, 4vw, 1.75rem)',
                 fontWeight: '800',
                 color: stat.color,
                 lineHeight: 1,
@@ -236,11 +235,11 @@ const Dashboard = () => {
                 {stat.value}
               </div>
               <div style={{
-                fontSize: '12px',
+                fontSize: 'clamp(9px, 2vw, 11px)',
                 color: 'var(--text-secondary)',
                 fontWeight: '600',
                 textTransform: 'uppercase',
-                letterSpacing: '1px',
+                letterSpacing: '0.5px',
               }}>
                 {stat.label}
               </div>
@@ -248,16 +247,15 @@ const Dashboard = () => {
           ))}
         </motion.div>
 
-        {/* GROUPS HEADER + CREATE BUTTON */}
+        {/* ── GROUPS HEADER ── */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '1.25rem',
+          marginBottom: '1rem',
+          gap: '10px',
         }}>
-          <h2 style={{
-            fontSize: '1.1rem', fontWeight: '700'
-          }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: '700' }}>
             Your Groups
           </h2>
           <button
@@ -267,54 +265,48 @@ const Dashboard = () => {
               color: '#fff',
               border: 'none',
               borderRadius: '10px',
-              padding: '9px 18px',
-              fontFamily: 'Syne, sans-serif',
+              padding: '8px 14px',
+              fontFamily: 'Syne,sans-serif',
               fontWeight: '700',
               fontSize: '13px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s',
+              gap: '5px',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
-            <Plus size={16} /> New Group
+            <Plus size={15} /> New Group
           </button>
         </div>
 
-        {/* GROUPS LIST */}
+        {/* ── GROUPS LIST ── */}
         {loading ? (
           <div style={{
-            display: 'flex', justifyContent: 'center',
-            padding: '3rem',
+            display: 'flex', justifyContent: 'center', padding: '3rem',
           }}>
-            <Loader
-              size={32}
-              style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }}
-            />
+            <Loader size={32} style={{
+              color: 'var(--accent)',
+              animation: 'spin 1s linear infinite',
+            }} />
           </div>
         ) : groups.length === 0 ? (
-          // Empty state
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="glass-card"
-            style={{
-              padding: '3rem',
-              textAlign: 'center',
-            }}
+            style={{ padding: '3rem', textAlign: 'center' }}
           >
             <div style={{ fontSize: '48px', marginBottom: '1rem' }}>🏝️</div>
             <h3 style={{
-              fontSize: '1.1rem', fontWeight: '700',
-              marginBottom: '0.5rem',
+              fontSize: '1rem', fontWeight: '700', marginBottom: '0.5rem',
             }}>
               No groups yet
             </h3>
             <p style={{
               color: 'var(--text-secondary)',
-              fontSize: '0.875rem',
-              marginBottom: '1.5rem',
+              fontSize: '0.875rem', marginBottom: '1.5rem',
             }}>
               Create your first group to start splitting expenses
             </p>
@@ -327,13 +319,11 @@ const Dashboard = () => {
             </button>
           </motion.div>
         ) : (
-          <motion.div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '1rem',
-            }}
-          >
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: '12px',
+          }}>
             {groups.map((group, i) => (
               <motion.div
                 key={group.id}
@@ -342,53 +332,35 @@ const Dashboard = () => {
                 transition={{ delay: i * 0.05 }}
                 className="glass-card"
                 onClick={() => navigate(`/groups/${group.id}`)}
-                style={{
-                  padding: '1.5rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                whileHover={{
-                  borderColor: 'rgba(233, 69, 96, 0.3)',
-                  y: -2,
-                }}
+                style={{ padding: '1.25rem', cursor: 'pointer' }}
+                whileHover={{ borderColor: 'rgba(233,69,96,0.3)', y: -2 }}
               >
-                {/* Group card header */}
                 <div style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  marginBottom: '1rem',
+                  display: 'flex', alignItems: 'flex-start',
+                  justifyContent: 'space-between', marginBottom: '0.875rem',
                 }}>
                   <div style={{
-                    width: '44px', height: '44px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, var(--accent), #ff6b81)',
-                    display: 'flex',
-                    alignItems: 'center',
+                    width: '44px', height: '44px', borderRadius: '12px',
+                    background: 'linear-gradient(135deg,var(--accent),#ff6b81)',
+                    display: 'flex', alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '20px',
+                    fontSize: '20px', fontWeight: '700', color: '#fff',
                   }}>
                     {group.name.charAt(0).toUpperCase()}
                   </div>
-                  <ChevronRight
-                    size={18}
-                    style={{ color: 'var(--text-secondary)' }}
-                  />
+                  <ChevronRight size={18} style={{ color: 'var(--text-secondary)' }} />
                 </div>
 
                 <h3 style={{
-                  fontSize: '1rem',
-                  fontWeight: '700',
-                  marginBottom: '4px',
+                  fontSize: '1rem', fontWeight: '700', marginBottom: '4px',
                 }}>
                   {group.name}
                 </h3>
 
                 {group.description && (
                   <p style={{
-                    fontSize: '13px',
-                    color: 'var(--text-secondary)',
-                    marginBottom: '1rem',
+                    fontSize: '13px', color: 'var(--text-secondary)',
+                    marginBottom: '0.75rem',
                     overflow: 'hidden',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
@@ -398,13 +370,9 @@ const Dashboard = () => {
                   </p>
                 )}
 
-                {/* Members avatars */}
                 <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  marginTop: '1rem',
-                  paddingTop: '1rem',
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                  marginTop: '0.875rem', paddingTop: '0.875rem',
                   borderTop: '1px solid var(--border)',
                 }}>
                   {group.members?.slice(0, 4).map((member, idx) => (
@@ -412,23 +380,21 @@ const Dashboard = () => {
                       key={idx}
                       title={member.name}
                       style={{
-                        width: '28px', height: '28px',
-                        borderRadius: '50%',
-                        background: `hsl(${idx * 60}, 70%, 50%)`,
+                        width: '28px', height: '28px', borderRadius: '50%',
+                        background: `hsl(${idx * 60},70%,50%)`,
                         display: 'flex', alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '11px', fontWeight: '700',
-                        color: '#fff',
+                        fontSize: '11px', fontWeight: '700', color: '#fff',
                         border: '2px solid var(--bg-card)',
                         marginLeft: idx > 0 ? '-8px' : '0',
+                        flexShrink: 0,
                       }}
                     >
                       {member.name?.charAt(0).toUpperCase()}
                     </div>
                   ))}
                   <span style={{
-                    fontSize: '12px',
-                    color: 'var(--text-secondary)',
+                    fontSize: '12px', color: 'var(--text-secondary)',
                     marginLeft: '8px',
                   }}>
                     {group.members?.length} member
@@ -437,54 +403,55 @@ const Dashboard = () => {
                 </div>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         )}
       </div>
 
-      {/* CREATE GROUP MODAL */}
+      {/* ── CREATE GROUP MODAL ── */}
       <AnimatePresence>
         {showCreateModal && (
           <>
-            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowCreateModal(false)}
               style={{
                 position: 'fixed', inset: 0,
                 background: 'rgba(0,0,0,0.7)',
-                backdropFilter: 'blur(4px)',
-                zIndex: 200,
+                backdropFilter: 'blur(4px)', zIndex: 200,
               }}
             />
-
-            {/* Modal */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
               style={{
                 position: 'fixed',
-                top: '50%', left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '90%', maxWidth: '440px',
+                bottom: 0,
+                left: 0,
+                right: 0,
                 background: 'var(--bg-card)',
                 border: '1px solid var(--border)',
-                borderRadius: '20px',
-                padding: '2rem',
+                borderRadius: '20px 20px 0 0',
+                padding: '1.5rem',
                 zIndex: 201,
+                maxHeight: '90vh',
+                overflowY: 'auto',
               }}
             >
+              {/* Handle bar */}
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '1.5rem',
+                width: '40px', height: '4px',
+                background: 'var(--border)',
+                borderRadius: '2px',
+                margin: '0 auto 1.25rem',
+              }} />
+
+              <div style={{
+                display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between', marginBottom: '1.25rem',
               }}>
-                <h3 style={{
-                  fontSize: '1.1rem', fontWeight: '700'
-                }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>
                   Create New Group
                 </h3>
                 <button
