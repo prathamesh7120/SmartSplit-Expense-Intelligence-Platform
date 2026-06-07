@@ -5,6 +5,7 @@ import Register from './pages/auth/Register';
 import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
 import GroupDetail from './pages/dashboard/GroupDetail';
+import ServerWakeUp from './components/ServerWakeUp';
 
 // ProtectedRoute = wrapper component.
 // If user is not logged in → redirect to /login automatically.
@@ -54,29 +55,29 @@ const AppRoutes = () => {
   );
 };
 
+
+
+
+// Wrap your entire return in App:
 const App = () => {
   return (
-    // AuthProvider wraps everything so all components
-    // can access login state via useAuth()
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-        {/* Toaster renders toast notifications.
-            position = where they appear on screen. */}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: '#111827',
-              color: '#f1f5f9',
-              border: '1px solid rgba(255,255,255,0.08)',
-              fontFamily: 'Syne, sans-serif',
-            },
-          }}
-        />
-      </BrowserRouter>
+      <ServerWakeUp>
+        <BrowserRouter>
+          <AppRoutes />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: '#111827',
+                color: '#f1f5f9',
+                border: '1px solid rgba(255,255,255,0.08)',
+                fontFamily: 'Syne, sans-serif',
+              },
+            }}
+          />
+        </BrowserRouter>
+      </ServerWakeUp>
     </AuthProvider>
   );
 };
-
-export default App;
