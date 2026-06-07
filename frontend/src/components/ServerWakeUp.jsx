@@ -44,8 +44,8 @@ const ServerWakeUp = ({ children }) => {
   };
 
   if (serverStatus === 'awake') {
-    return children;
-  }
+  return <>{children}</>;
+}
 
   return (
     <div style={{
