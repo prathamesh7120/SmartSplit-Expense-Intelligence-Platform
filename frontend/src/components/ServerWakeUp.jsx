@@ -1,16 +1,9 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import axios from 'axios';
 
-// This component pings the backend health endpoint.
-// If backend is sleeping (Render free tier), it shows
-// a friendly message instead of a broken blank screen.
-// Once backend responds, it disappears automatically.
 const ServerWakeUp = ({ children }) => {
   const [serverStatus, setServerStatus] = useState('checking');
-  // checking = pinging server
-  // awake    = server responded, show app
-  // sleeping = server is starting up, show message
 
   useEffect(() => {
     checkServer();
@@ -21,17 +14,13 @@ const ServerWakeUp = ({ children }) => {
       'http://localhost:8080/api';
 
     try {
-      // Ping the health endpoint with 5 second timeout first
       await axios.get(`${baseURL}/health`, { timeout: 5000 });
       setServerStatus('awake');
     } catch (error) {
       if (error.code === 'ECONNABORTED' || !error.response) {
-        // Server is sleeping — show wake up message
         setServerStatus('sleeping');
-        // Keep pinging every 5 seconds until it wakes
         pollUntilAwake(baseURL);
       } else {
-        // Server responded with an error but IS awake
         setServerStatus('awake');
       }
     }
@@ -44,18 +33,16 @@ const ServerWakeUp = ({ children }) => {
         setServerStatus('awake');
         clearInterval(interval);
       } catch {
-        // Still sleeping — keep trying
+        // still sleeping
       }
     }, 5000);
 
-    // Stop polling after 2 minutes no matter what
     setTimeout(() => {
       clearInterval(interval);
       setServerStatus('awake');
     }, 120000);
   };
 
-  // Server is awake — show the actual app
   if (serverStatus === 'awake') {
     return children;
   }
@@ -71,12 +58,8 @@ const ServerWakeUp = ({ children }) => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{
-          textAlign: 'center',
-          maxWidth: '400px',
-        }}
+        style={{ textAlign: 'center', maxWidth: '400px' }}
       >
-        {/* Animated logo */}
         <motion.div
           animate={{ scale: [1, 1.1, 1] }}
           transition={{ repeat: Infinity, duration: 2 }}
@@ -108,18 +91,18 @@ const ServerWakeUp = ({ children }) => {
           marginBottom: '2rem',
         }}>
           Our free server goes to sleep after inactivity.
-          It will be ready in about <strong style={{ color: 'var(--accent)' }}>
+          It will be ready in about{' '}
+          <strong style={{ color: 'var(--accent)' }}>
             30 seconds
           </strong>. Please wait...
         </p>
 
-        {/* Animated progress bar */}
         <div style={{
           height: '4px',
-          background: 'var(--surface)',
+          background: 'rgba(255,255,255,0.08)',
           borderRadius: '2px',
           overflow: 'hidden',
-          marginBottom: '1rem',
+          marginBottom: '1.5rem',
         }}>
           <motion.div
             initial={{ x: '-100%' }}
@@ -132,14 +115,17 @@ const ServerWakeUp = ({ children }) => {
             style={{
               height: '100%',
               width: '40%',
-              background: 'linear-gradient(90deg,transparent,var(--accent),transparent)',
+              background: 'linear-gradient(90deg,transparent,#e94560,transparent)',
               borderRadius: '2px',
             }}
           />
         </div>
 
-        {/* Dots animation */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '6px',
+        }}>
           {[0, 1, 2].map(i => (
             <motion.div
               key={i}
@@ -152,7 +138,7 @@ const ServerWakeUp = ({ children }) => {
               style={{
                 width: '8px', height: '8px',
                 borderRadius: '50%',
-                background: 'var(--accent)',
+                background: '#e94560',
               }}
             />
           ))}
@@ -162,7 +148,7 @@ const ServerWakeUp = ({ children }) => {
           <p style={{
             marginTop: '1.5rem',
             fontSize: '12px',
-            color: 'var(--text-secondary)',
+            color: 'rgba(255,255,255,0.3)',
             fontFamily: 'JetBrains Mono, monospace',
           }}>
             Checking server status...
