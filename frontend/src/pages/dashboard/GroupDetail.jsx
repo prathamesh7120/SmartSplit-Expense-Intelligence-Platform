@@ -164,18 +164,16 @@ const GroupDetail = () => {
     m => m.userName === user?.name
   );
 
-  // ── MODAL STYLE — fixed, scrollable, starts from top ──
-  const modalStyle = {
+  // ── BOTTOM SHEET MODAL STYLE (mobile native feel) ──
+  const bottomSheetStyle = {
     position: 'fixed',
-    top: '4vh',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '92%',
-    maxWidth: '480px',
+    bottom: 0,
+    left: 0,
+    right: 0,
     background: 'var(--bg-card)',
     border: '1px solid var(--border)',
-    borderRadius: '20px',
-    padding: '1.25rem 1.5rem',
+    borderRadius: '20px 20px 0 0',
+    padding: '0 1.25rem 2rem',
     zIndex: 201,
     maxHeight: '92vh',
     overflowY: 'auto',
@@ -197,19 +195,25 @@ const GroupDetail = () => {
   const fieldWrap = { marginBottom: '0.65rem' };
 
   return (
-    <div style={{ minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', overflowX: 'hidden' }}>
 
-      {/* NAVBAR */}
+      {/* ── NAVBAR ── */}
       <nav style={{
-        background: 'rgba(10,15,30,0.8)',
+        background: 'rgba(10,15,30,0.9)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid var(--border)',
-        padding: '1rem 2rem',
-        display: 'flex', alignItems: 'center',
+        padding: '0.875rem 1rem',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 100,
+        gap: '8px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Left — back + group name */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          gap: '8px', minWidth: 0, flex: 1,
+        }}>
           <button
             onClick={() => navigate('/dashboard')}
             style={{
@@ -217,60 +221,76 @@ const GroupDetail = () => {
               border: '1px solid var(--border)',
               borderRadius: '8px', padding: '7px',
               cursor: 'pointer', color: 'var(--text-secondary)',
-              display: 'flex',
+              display: 'flex', flexShrink: 0,
             }}
           >
             <ArrowLeft size={16} />
           </button>
-          <div>
-            <div style={{ fontSize: '1rem', fontWeight: '700' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{
+              fontSize: '0.95rem', fontWeight: '700',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
               {group?.name}
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
               {group?.members?.length} members
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        {/* Right — action buttons */}
+        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+          {/* Add Member — icon only on mobile */}
           <button
             onClick={() => setShowAddMember(true)}
             style={{
               background: 'rgba(56,189,248,0.1)',
               border: '1px solid rgba(56,189,248,0.2)',
-              borderRadius: '10px', padding: '8px 14px',
+              borderRadius: '8px', padding: '8px',
               color: 'var(--blue)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '13px', fontFamily: 'Syne,sans-serif', fontWeight: '600',
+              display: 'flex', alignItems: 'center', gap: '5px',
+              fontSize: '13px', fontFamily: 'Syne,sans-serif',
+              fontWeight: '600',
             }}
           >
-            <UserPlus size={14} /> Add Member
+            <UserPlus size={15} />
           </button>
+
+          {/* Add Expense */}
           <button
             onClick={() => setShowAddExpense(true)}
             style={{
               background: 'var(--accent)', color: '#fff',
-              border: 'none', borderRadius: '10px',
-              padding: '8px 14px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '13px', fontFamily: 'Syne,sans-serif', fontWeight: '600',
+              border: 'none', borderRadius: '8px',
+              padding: '8px 12px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '5px',
+              fontSize: '13px', fontFamily: 'Syne,sans-serif',
+              fontWeight: '600', whiteSpace: 'nowrap',
             }}
           >
-            <Plus size={14} /> Add Expense
+            <Plus size={14} /> Add
           </button>
         </div>
       </nav>
 
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+      <div style={{
+        maxWidth: '1100px', margin: '0 auto',
+        padding: '1.25rem 1rem',
+        width: '100%',
+      }}>
 
-        {/* BALANCE CARD */}
+        {/* ── BALANCE CARD ── */}
         {myBalance && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             style={{
-              borderRadius: '16px', padding: '1.5rem',
-              marginBottom: '1.5rem',
+              borderRadius: '14px',
+              padding: '1.25rem',
+              marginBottom: '1.25rem',
               background: myBalance.netBalance >= 0
                 ? 'linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.05))'
                 : 'linear-gradient(135deg,rgba(233,69,96,0.1),rgba(233,69,96,0.05))',
@@ -278,62 +298,79 @@ const GroupDetail = () => {
                 ? 'rgba(16,185,129,0.25)' : 'rgba(233,69,96,0.25)'}`,
             }}
           >
+            {/* Top row — big balance number */}
+            <div style={{ marginBottom: '1rem' }}>
+              <div style={{
+                fontSize: '12px', fontWeight: '600',
+                color: 'var(--text-secondary)', marginBottom: '4px',
+                textTransform: 'uppercase', letterSpacing: '1px',
+              }}>
+                Your Balance
+              </div>
+              <div style={{
+                fontSize: 'clamp(1.5rem, 6vw, 2rem)',
+                fontWeight: '800',
+                color: myBalance.netBalance >= 0 ? 'var(--green)' : 'var(--accent)',
+              }}>
+                {myBalance.netBalance >= 0 ? '+' : ''}
+                ₹{Math.abs(myBalance.netBalance).toFixed(2)}
+              </div>
+              <div style={{
+                fontSize: '12px', color: 'var(--text-secondary)', marginTop: '3px',
+              }}>
+                {myBalance.netBalance > 0
+                  ? 'You are owed this amount'
+                  : myBalance.netBalance < 0
+                  ? 'You owe this amount'
+                  : 'You are all settled up! 🎉'}
+              </div>
+            </div>
+
+            {/* Bottom row — 3 stats */}
             <div style={{
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '8px',
+              paddingTop: '1rem',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
             }}>
-              <div>
-                <div style={{
-                  fontSize: '13px', fontWeight: '600',
-                  color: 'var(--text-secondary)', marginBottom: '4px',
-                  textTransform: 'uppercase', letterSpacing: '1px',
-                }}>
-                  Your Balance
-                </div>
-                <div style={{
-                  fontSize: '2rem', fontWeight: '800',
-                  color: myBalance.netBalance >= 0 ? 'var(--green)' : 'var(--accent)',
-                }}>
-                  {myBalance.netBalance >= 0 ? '+' : ''}
-                  ₹{Math.abs(myBalance.netBalance).toFixed(2)}
-                </div>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                  {myBalance.netBalance > 0
-                    ? 'You are owed this amount'
-                    : myBalance.netBalance < 0
-                    ? 'You owe this amount'
-                    : 'You are all settled up! 🎉'}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '1.5rem' }}>
-                {[
-                  { label: 'You Paid', value: myBalance.totalPaid, color: 'var(--blue)' },
-                  { label: 'Your Share', value: myBalance.totalOwed, color: 'var(--gold)' },
-                  { label: 'Total Spend', value: balance?.totalGroupSpend || 0, color: 'var(--text-primary)' },
-                ].map((item, i) => (
-                  <div key={i} style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '700', color: item.color }}>
-                      ₹{parseFloat(item.value).toFixed(2)}
-                    </div>
-                    <div style={{
-                      fontSize: '11px', color: 'var(--text-secondary)',
-                      textTransform: 'uppercase', letterSpacing: '1px',
-                    }}>
-                      {item.label}
-                    </div>
+              {[
+                { label: 'You Paid', value: myBalance.totalPaid, color: 'var(--blue)' },
+                { label: 'Your Share', value: myBalance.totalOwed, color: 'var(--gold)' },
+                { label: 'Total', value: balance?.totalGroupSpend || 0, color: 'var(--text-primary)' },
+              ].map((item, i) => (
+                <div key={i} style={{ textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: 'clamp(0.85rem, 3vw, 1.1rem)',
+                    fontWeight: '700', color: item.color,
+                  }}>
+                    ₹{parseFloat(item.value).toFixed(0)}
                   </div>
-                ))}
-              </div>
+                  <div style={{
+                    fontSize: 'clamp(9px, 2vw, 11px)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase', letterSpacing: '0.5px',
+                    fontWeight: '600',
+                  }}>
+                    {item.label}
+                  </div>
+                </div>
+              ))}
             </div>
           </motion.div>
         )}
 
-        {/* TABS */}
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '1.5rem' }}>
+        {/* ── TABS ── */}
+        <div style={{
+          display: 'flex', gap: '6px',
+          marginBottom: '1.25rem',
+          overflowX: 'auto',
+          paddingBottom: '2px',
+        }}>
           {[
-            { key: 'expenses', label: 'Expenses', icon: <Receipt size={14} /> },
-            { key: 'balances', label: 'Balances', icon: <TrendingUp size={14} /> },
-            { key: 'members', label: 'Members', icon: <Users size={14} /> },
+            { key: 'expenses', label: 'Expenses', icon: <Receipt size={13} /> },
+            { key: 'balances', label: 'Balances', icon: <TrendingUp size={13} /> },
+            { key: 'members', label: 'Members', icon: <Users size={13} /> },
           ].map(tab => (
             <button
               key={tab.key}
@@ -341,11 +378,15 @@ const GroupDetail = () => {
               style={{
                 background: activeTab === tab.key ? 'var(--accent)' : 'var(--glass)',
                 color: activeTab === tab.key ? '#fff' : 'var(--text-secondary)',
-                border: `1px solid ${activeTab === tab.key ? 'var(--accent)' : 'var(--border)'}`,
-                borderRadius: '10px', padding: '8px 16px',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-                fontSize: '13px', fontFamily: 'Syne,sans-serif',
+                border: `1px solid ${activeTab === tab.key
+                  ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: '10px',
+                padding: '7px 14px',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '5px',
+                fontSize: '12px', fontFamily: 'Syne,sans-serif',
                 fontWeight: '600', transition: 'all 0.2s',
+                whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               {tab.icon} {tab.label}
@@ -353,18 +394,18 @@ const GroupDetail = () => {
           ))}
         </div>
 
-        {/* TAB: EXPENSES */}
+        {/* ── TAB: EXPENSES ── */}
         {activeTab === 'expenses' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             {expenses.length === 0 ? (
-              <div className="glass-card" style={{ padding: '3rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '48px', marginBottom: '1rem' }}>🧾</div>
+              <div className="glass-card" style={{ padding: '2.5rem 1.5rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '44px', marginBottom: '0.75rem' }}>🧾</div>
                 <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '0.5rem' }}>
                   No expenses yet
                 </h3>
                 <p style={{
                   color: 'var(--text-secondary)',
-                  fontSize: '0.875rem', marginBottom: '1.5rem',
+                  fontSize: '0.875rem', marginBottom: '1.25rem',
                 }}>
                   Add your first expense to start tracking
                 </p>
@@ -385,65 +426,83 @@ const GroupDetail = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
                     className="glass-card"
-                    style={{ padding: '1.25rem' }}
+                    style={{ padding: '1rem' }}
                   >
                     <div style={{
                       display: 'flex', alignItems: 'center',
-                      justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px',
+                      justifyContent: 'space-between', gap: '10px',
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center',
+                        gap: '10px', minWidth: 0, flex: 1,
+                      }}>
                         <div style={{
-                          width: '44px', height: '44px', borderRadius: '12px',
+                          width: '40px', height: '40px',
+                          borderRadius: '10px', flexShrink: 0,
                           background: `${CATEGORY_COLORS[expense.category]}20`,
                           display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', fontSize: '20px',
+                          justifyContent: 'center', fontSize: '18px',
                         }}>
                           {CATEGORY_ICONS[expense.category]}
                         </div>
-                        <div>
-                          <div style={{ fontWeight: '700', fontSize: '0.95rem', marginBottom: '2px' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{
+                            fontWeight: '700', fontSize: '0.9rem',
+                            marginBottom: '2px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}>
                             {expense.title}
                           </div>
-                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                            Paid by {expense.paidByName} ·{' '}
-                            {new Date(expense.createdAt).toLocaleDateString('en-IN')}
+                          <div style={{
+                            fontSize: '11px', color: 'var(--text-secondary)',
+                          }}>
+                            {expense.paidByName} · {new Date(
+                              expense.createdAt
+                            ).toLocaleDateString('en-IN')}
                           </div>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>
-                          ₹{parseFloat(expense.amount).toFixed(2)}
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '1rem', fontWeight: '800' }}>
+                          ₹{parseFloat(expense.amount).toFixed(0)}
                         </div>
                         <div style={{
-                          fontSize: '11px',
+                          fontSize: '10px',
                           color: CATEGORY_COLORS[expense.category],
-                          fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px',
+                          fontWeight: '600',
+                          textTransform: 'uppercase',
                         }}>
                           {expense.category}
                         </div>
                       </div>
                     </div>
+
+                    {/* Split badges */}
                     <div style={{
-                      marginTop: '1rem', paddingTop: '1rem',
+                      marginTop: '0.75rem', paddingTop: '0.75rem',
                       borderTop: '1px solid var(--border)',
-                      display: 'flex', flexWrap: 'wrap', gap: '8px',
+                      display: 'flex', flexWrap: 'wrap', gap: '6px',
                     }}>
                       {expense.splits?.map((split, idx) => (
                         <div
                           key={idx}
                           style={{
-                            display: 'flex', alignItems: 'center', gap: '5px',
-                            fontSize: '12px',
+                            display: 'flex', alignItems: 'center', gap: '4px',
+                            fontSize: '11px',
                             background: split.isSettled
                               ? 'rgba(16,185,129,0.1)' : 'rgba(233,69,96,0.1)',
                             color: split.isSettled ? 'var(--green)' : 'var(--accent)',
-                            padding: '3px 10px', borderRadius: '20px',
+                            padding: '3px 8px', borderRadius: '20px',
                             border: `1px solid ${split.isSettled
                               ? 'rgba(16,185,129,0.2)' : 'rgba(233,69,96,0.2)'}`,
                           }}
                         >
-                          {split.isSettled ? <CheckCircle size={11} /> : <Circle size={11} />}
-                          {split.userName} ₹{parseFloat(split.amountOwed).toFixed(2)}
+                          {split.isSettled
+                            ? <CheckCircle size={10} />
+                            : <Circle size={10} />}
+                          {split.userName} ₹{parseFloat(split.amountOwed).toFixed(0)}
                         </div>
                       ))}
                     </div>
@@ -454,19 +513,21 @@ const GroupDetail = () => {
           </motion.div>
         )}
 
-        {/* TAB: BALANCES */}
+        {/* ── TAB: BALANCES ── */}
         {activeTab === 'balances' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))',
-              gap: '1.25rem',
+              gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))',
+              gap: '1rem',
             }}
           >
-            <div className="glass-card" style={{ padding: '1.5rem' }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '1.25rem' }}>
+            <div className="glass-card" style={{ padding: '1.25rem' }}>
+              <div style={{
+                fontSize: '0.875rem', fontWeight: '700', marginBottom: '1rem',
+              }}>
                 Spending by Category
               </div>
               {chartData.length === 0 ? (
@@ -477,12 +538,12 @@ const GroupDetail = () => {
                   No expenses to chart yet
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
                       data={chartData}
                       cx="50%" cy="50%"
-                      innerRadius={55} outerRadius={85}
+                      innerRadius={50} outerRadius={78}
                       paddingAngle={3} dataKey="value"
                     >
                       {chartData.map((entry, index) => (
@@ -495,15 +556,18 @@ const GroupDetail = () => {
                     <Tooltip
                       formatter={(value) => [`₹${value.toFixed(2)}`, 'Amount']}
                       contentStyle={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
+                        background: '#111827',
+                        border: '1px solid rgba(255,255,255,0.08)',
                         borderRadius: '10px',
                         fontFamily: 'Syne,sans-serif',
+                        fontSize: '12px',
                       }}
                     />
                     <Legend
                       formatter={(value) => (
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
+                        <span style={{
+                          color: 'var(--text-secondary)', fontSize: '11px',
+                        }}>
                           {CATEGORY_ICONS[value]} {value}
                         </span>
                       )}
@@ -513,63 +577,81 @@ const GroupDetail = () => {
               )}
             </div>
 
-            <div className="glass-card" style={{ padding: '1.5rem' }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '1.25rem' }}>
+            <div className="glass-card" style={{ padding: '1.25rem' }}>
+              <div style={{
+                fontSize: '0.875rem', fontWeight: '700', marginBottom: '1rem',
+              }}>
                 Who Owes Whom
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {balance?.memberBalances?.map((member, i) => (
-                  <motion.div
+                  <div
                     key={i}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
                     style={{
                       display: 'flex', alignItems: 'center',
                       justifyContent: 'space-between',
                       padding: '10px 12px', borderRadius: '10px',
-                      background: 'var(--glass)', border: '1px solid var(--border)',
+                      background: 'var(--glass)',
+                      border: '1px solid var(--border)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center',
+                      gap: '8px', minWidth: 0,
+                    }}>
                       <div style={{
-                        width: '34px', height: '34px', borderRadius: '50%',
+                        width: '32px', height: '32px', borderRadius: '50%',
                         background: `hsl(${i * 60},70%,50%)`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '13px', fontWeight: '700', color: '#fff',
+                        display: 'flex', alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px', fontWeight: '700',
+                        color: '#fff', flexShrink: 0,
                       }}>
                         {member.userName?.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: '600' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '0.82rem', fontWeight: '600',
+                          overflow: 'hidden', textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
                           {member.userName}
                           {member.userName === user?.name && (
-                            <span style={{ fontSize: '10px', color: 'var(--blue)', marginLeft: '6px' }}>
+                            <span style={{
+                              fontSize: '10px', color: 'var(--blue)',
+                              marginLeft: '4px',
+                            }}>
                               (you)
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                          Paid ₹{parseFloat(member.totalPaid).toFixed(2)}
+                        <div style={{
+                          fontSize: '11px', color: 'var(--text-secondary)',
+                        }}>
+                          Paid ₹{parseFloat(member.totalPaid).toFixed(0)}
                         </div>
                       </div>
                     </div>
                     <div style={{
-                      fontSize: '0.95rem', fontWeight: '700',
-                      color: member.netBalance >= 0 ? 'var(--green)' : 'var(--accent)',
+                      fontSize: '0.9rem', fontWeight: '700', flexShrink: 0,
+                      color: member.netBalance >= 0
+                        ? 'var(--green)' : 'var(--accent)',
                     }}>
                       {member.netBalance >= 0 ? '+' : ''}
-                      ₹{parseFloat(member.netBalance).toFixed(2)}
+                      ₹{parseFloat(member.netBalance).toFixed(0)}
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
               <div style={{
                 marginTop: '1rem', paddingTop: '1rem',
                 borderTop: '1px solid var(--border)',
-                display: 'flex', justifyContent: 'space-between', fontSize: '13px',
+                display: 'flex', justifyContent: 'space-between',
+                fontSize: '13px',
               }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Total Group Spend</span>
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  Total Group Spend
+                </span>
                 <span style={{ fontWeight: '700', color: 'var(--gold)' }}>
                   ₹{parseFloat(balance?.totalGroupSpend || 0).toFixed(2)}
                 </span>
@@ -578,14 +660,14 @@ const GroupDetail = () => {
           </motion.div>
         )}
 
-        {/* TAB: MEMBERS */}
+        {/* ── TAB: MEMBERS ── */}
         {activeTab === 'members' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))',
+              gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))',
               gap: '10px',
             }}
           >
@@ -596,36 +678,49 @@ const GroupDetail = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.05 }}
                 className="glass-card"
-                style={{ padding: '1.25rem' }}
+                style={{ padding: '1rem' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{
-                    width: '44px', height: '44px', borderRadius: '50%',
+                    width: '42px', height: '42px', borderRadius: '50%',
                     background: `hsl(${i * 60},70%,50%)`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '18px', fontWeight: '700', color: '#fff',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', flexShrink: 0,
+                    fontSize: '16px', fontWeight: '700', color: '#fff',
                   }}>
                     {member.name?.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{
+                      fontWeight: '700', fontSize: '0.875rem',
+                      overflow: 'hidden', textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
                       {member.name}
                       {member.email === user?.email && (
-                        <span style={{ fontSize: '10px', color: 'var(--blue)', marginLeft: '6px' }}>
+                        <span style={{
+                          fontSize: '10px', color: 'var(--blue)',
+                          marginLeft: '4px',
+                        }}>
                           (you)
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <div style={{
+                      fontSize: '11px', color: 'var(--text-secondary)',
+                      overflow: 'hidden', textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
                       {member.email}
                     </div>
                     <span style={{
                       fontSize: '10px', fontWeight: '700',
-                      padding: '2px 8px', borderRadius: '20px',
+                      padding: '2px 7px', borderRadius: '20px',
                       marginTop: '4px', display: 'inline-block',
                       background: member.role === 'ADMIN'
                         ? 'rgba(233,69,96,0.1)' : 'rgba(56,189,248,0.1)',
-                      color: member.role === 'ADMIN' ? 'var(--accent)' : 'var(--blue)',
+                      color: member.role === 'ADMIN'
+                        ? 'var(--accent)' : 'var(--blue)',
                       border: `1px solid ${member.role === 'ADMIN'
                         ? 'rgba(233,69,96,0.2)' : 'rgba(56,189,248,0.2)'}`,
                       textTransform: 'uppercase', letterSpacing: '1px',
@@ -640,32 +735,45 @@ const GroupDetail = () => {
         )}
       </div>
 
-      {/* ── ADD EXPENSE MODAL ── */}
+      {/* ── ADD EXPENSE MODAL — bottom sheet ── */}
       <AnimatePresence>
         {showAddExpense && (
           <>
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setShowAddExpense(false)}
               style={backdropStyle}
             />
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              style={modalStyle}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              style={bottomSheetStyle}
             >
+              {/* Handle */}
+              <div style={{
+                width: '40px', height: '4px',
+                background: 'var(--border)', borderRadius: '2px',
+                margin: '1rem auto 1.25rem',
+              }} />
+
               <div style={{
                 display: 'flex', alignItems: 'center',
                 justifyContent: 'space-between', marginBottom: '1rem',
               }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Add Expense</h3>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>
+                  Add Expense
+                </h3>
                 <button
                   onClick={() => setShowAddExpense(false)}
                   style={{
-                    background: 'var(--glass)', border: '1px solid var(--border)',
+                    background: 'var(--glass)',
+                    border: '1px solid var(--border)',
                     borderRadius: '8px', padding: '6px',
-                    cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex',
+                    cursor: 'pointer', color: 'var(--text-secondary)',
+                    display: 'flex',
                   }}
                 >
                   <X size={16} />
@@ -680,7 +788,9 @@ const GroupDetail = () => {
                     type="text"
                     placeholder="e.g. Dinner at restaurant"
                     value={expenseForm.title}
-                    onChange={e => setExpenseForm(p => ({ ...p, title: e.target.value }))}
+                    onChange={e => setExpenseForm(p => ({
+                      ...p, title: e.target.value
+                    }))}
                   />
                 </div>
 
@@ -692,7 +802,9 @@ const GroupDetail = () => {
                     placeholder="0.00"
                     min="0.01" step="0.01"
                     value={expenseForm.amount}
-                    onChange={e => setExpenseForm(p => ({ ...p, amount: e.target.value }))}
+                    onChange={e => setExpenseForm(p => ({
+                      ...p, amount: e.target.value
+                    }))}
                   />
                 </div>
 
@@ -702,7 +814,9 @@ const GroupDetail = () => {
                     {Object.keys(CATEGORY_ICONS).map(cat => (
                       <button
                         key={cat} type="button"
-                        onClick={() => setExpenseForm(p => ({ ...p, category: cat }))}
+                        onClick={() => setExpenseForm(p => ({
+                          ...p, category: cat
+                        }))}
                         style={{
                           padding: '5px 10px', borderRadius: '8px',
                           border: `1px solid ${expenseForm.category === cat
@@ -713,7 +827,6 @@ const GroupDetail = () => {
                             ? CATEGORY_COLORS[cat] : 'var(--text-secondary)',
                           cursor: 'pointer', fontSize: '12px',
                           fontFamily: 'Syne,sans-serif', fontWeight: '600',
-                          transition: 'all 0.15s',
                         }}
                       >
                         {CATEGORY_ICONS[cat]} {cat}
@@ -728,7 +841,9 @@ const GroupDetail = () => {
                     {['EQUAL', 'CUSTOM'].map(type => (
                       <button
                         key={type} type="button"
-                        onClick={() => setExpenseForm(p => ({ ...p, splitType: type }))}
+                        onClick={() => setExpenseForm(p => ({
+                          ...p, splitType: type
+                        }))}
                         style={{
                           flex: 1, padding: '8px', borderRadius: '8px',
                           border: `1px solid ${expenseForm.splitType === type
@@ -754,11 +869,17 @@ const GroupDetail = () => {
                     type="text"
                     placeholder="Any notes about this expense"
                     value={expenseForm.description}
-                    onChange={e => setExpenseForm(p => ({ ...p, description: e.target.value }))}
+                    onChange={e => setExpenseForm(p => ({
+                      ...p, description: e.target.value
+                    }))}
                   />
                 </div>
 
-                <button className="btn-primary" type="submit" disabled={submitting}>
+                <button
+                  className="btn-primary"
+                  type="submit"
+                  disabled={submitting}
+                >
                   {submitting ? 'Adding...' : 'Add Expense'}
                 </button>
               </form>
@@ -767,41 +888,50 @@ const GroupDetail = () => {
         )}
       </AnimatePresence>
 
-      {/* ── ADD MEMBER MODAL ── */}
+      {/* ── ADD MEMBER MODAL — bottom sheet ── */}
       <AnimatePresence>
         {showAddMember && (
           <>
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setShowAddMember(false)}
               style={backdropStyle}
             />
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              style={{
-                ...modalStyle,
-                maxWidth: '400px',
-                top: '20vh',
-              }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              style={bottomSheetStyle}
             >
               <div style={{
+                width: '40px', height: '4px',
+                background: 'var(--border)', borderRadius: '2px',
+                margin: '1rem auto 1.25rem',
+              }} />
+
+              <div style={{
                 display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between', marginBottom: '1.5rem',
+                justifyContent: 'space-between', marginBottom: '1.25rem',
               }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Add Member</h3>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>
+                  Add Member
+                </h3>
                 <button
                   onClick={() => setShowAddMember(false)}
                   style={{
-                    background: 'var(--glass)', border: '1px solid var(--border)',
+                    background: 'var(--glass)',
+                    border: '1px solid var(--border)',
                     borderRadius: '8px', padding: '6px',
-                    cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex',
+                    cursor: 'pointer', color: 'var(--text-secondary)',
+                    display: 'flex',
                   }}
                 >
                   <X size={16} />
                 </button>
               </div>
+
               <form onSubmit={handleAddMember}>
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={labelStyle}>Member Email</label>
@@ -813,11 +943,18 @@ const GroupDetail = () => {
                     onChange={e => setMemberEmail(e.target.value)}
                     autoFocus
                   />
-                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                  <p style={{
+                    fontSize: '12px', color: 'var(--text-secondary)',
+                    marginTop: '6px',
+                  }}>
                     They must already have a SmartSplit account
                   </p>
                 </div>
-                <button className="btn-primary" type="submit" disabled={addingMember}>
+                <button
+                  className="btn-primary"
+                  type="submit"
+                  disabled={addingMember}
+                >
                   {addingMember ? 'Adding...' : 'Add Member'}
                 </button>
               </form>
