@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ExpenseSplitRepository
@@ -34,4 +35,8 @@ public interface ExpenseSplitRepository
 
     // All splits for a specific expense
     List<ExpenseSplit> findByExpenseId(Long expenseId);
+
+    // user requesting settlement — security check.
+    Optional<ExpenseSplit> findByExpenseIdAndUserId(
+            Long expenseId, Long userId);
 }
